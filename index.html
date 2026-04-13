@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -403,6 +404,8 @@ const Icons = {
   trending: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
   pound: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 20H7c0-4 2-6 2-10a4 4 0 018 0"/><line x1="6" y1="14" x2="14" y2="14"/></svg>,
   edit: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  link: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>,
+  image: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
 };
 
 /* ─── Data helpers ─── */
@@ -588,7 +591,7 @@ function ShoppingList({ data, setData }) {
   const [modal, setModal] = useState(false);
   const [filter, setFilter] = useState('all');
   const [priority, setPriority] = useState('all');
-  const [form, setForm] = useState({ name: '', price: '', category: 'General', priority: 'essential' });
+  const [form, setForm] = useState({ name: '', price: '', category: 'General', priority: 'essential', url: '', image: '' });
   const [editId, setEditId] = useState(null);
 
   const items = data.shoppingItems
@@ -608,6 +611,8 @@ function ShoppingList({ data, setData }) {
       price: parseFloat(form.price) || 0,
       category: form.category,
       priority: form.priority,
+      url: form.url || '',
+      image: form.image || '',
       bought: editId ? (data.shoppingItems.find(i => i.id === editId)?.bought || false) : false,
     };
     let newItems;
@@ -617,7 +622,7 @@ function ShoppingList({ data, setData }) {
       newItems = [...data.shoppingItems, item];
     }
     setData({ ...data, shoppingItems: newItems });
-    setForm({ name: '', price: '', category: 'General', priority: 'essential' });
+    setForm({ name: '', price: '', category: 'General', priority: 'essential', url: '', image: '' });
     setEditId(null);
     setModal(false);
   }
@@ -630,7 +635,7 @@ function ShoppingList({ data, setData }) {
   }
 
   function handleEdit(item) {
-    setForm({ name: item.name, price: item.price.toString(), category: item.category, priority: item.priority });
+    setForm({ name: item.name, price: item.price.toString(), category: item.category, priority: item.priority, url: item.url || '', image: item.image || '' });
     setEditId(item.id);
     setModal(true);
   }
@@ -649,7 +654,7 @@ function ShoppingList({ data, setData }) {
           <h1 className="page-title">Shopping</h1>
           <p className="page-subtitle">{fmt(boughtCost)} of {fmt(totalCost)} bought</p>
         </div>
-        <button className="btn btn-sm" onClick={() => { setEditId(null); setForm({ name: '', price: '', category: 'General', priority: 'essential' }); setModal(true); }}>
+        <button className="btn btn-sm" onClick={() => { setEditId(null); setForm({ name: '', price: '', category: 'General', priority: 'essential', url: '', image: '' }); setModal(true); }}>
           <Icons.plus style={{ width: 14, height: 14 }} /> Add
         </button>
       </div>
@@ -680,28 +685,43 @@ function ShoppingList({ data, setData }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {items.map(item => (
-            <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16 }}>
-              <div className={`checkbox ${item.bought ? 'checked' : ''}`} onClick={() => toggleBought(item.id)}>
-                {item.bought && <Icons.check style={{ color: 'white' }} />}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }} onClick={() => handleEdit(item)}>
-                <div style={{ fontSize: 14, fontWeight: 400, opacity: item.bought ? 0.4 : 1, textDecoration: item.bought ? 'line-through' : 'none' }}>
-                  {item.name}
+            <div key={item.id} className="card" style={{ padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div className={`checkbox ${item.bought ? 'checked' : ''}`} onClick={() => toggleBought(item.id)}>
+                  {item.bought && <Icons.check style={{ color: 'white' }} />}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 8 }}>
-                  <span>{item.category}</span>
-                  <span>·</span>
-                  <span style={{ color: item.priority === 'essential' ? 'var(--green)' : 'var(--text-muted)' }}>
-                    {item.priority === 'essential' ? 'Essential' : 'Nice to have'}
-                  </span>
+                <div style={{ flex: 1, minWidth: 0 }} onClick={() => handleEdit(item)}>
+                  <div style={{ fontSize: 14, fontWeight: 400, opacity: item.bought ? 0.4 : 1, textDecoration: item.bought ? 'line-through' : 'none' }}>
+                    {item.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span>{item.category}</span>
+                    <span>·</span>
+                    <span style={{ color: item.priority === 'essential' ? 'var(--green)' : 'var(--text-muted)' }}>
+                      {item.priority === 'essential' ? 'Essential' : 'Nice to have'}
+                    </span>
+                    {item.url && (
+                      <>
+                        <span>·</span>
+                        <a href={item.url} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} style={{ color: 'var(--blue)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                          <Icons.link style={{ width: 11, height: 11 }} /> Link
+                        </a>
+                      </>
+                    )}
+                  </div>
                 </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 14, fontVariantNumeric: 'tabular-nums', opacity: item.bought ? 0.4 : 1 }}>{fmt(item.price)}</div>
+                </div>
+                <button className="btn-danger" onClick={() => handleDelete(item.id)} style={{ padding: 4 }}>
+                  <Icons.trash style={{ width: 16, height: 16 }} />
+                </button>
               </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: 14, fontVariantNumeric: 'tabular-nums', opacity: item.bought ? 0.4 : 1 }}>{fmt(item.price)}</div>
-              </div>
-              <button className="btn-danger" onClick={() => handleDelete(item.id)} style={{ padding: 4 }}>
-                <Icons.trash style={{ width: 16, height: 16 }} />
-              </button>
+              {item.image && (
+                <div style={{ marginTop: 10, marginLeft: 36 }} onClick={() => handleEdit(item)}>
+                  <img src={item.image} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)', opacity: item.bought ? 0.4 : 1 }} />
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -732,6 +752,37 @@ function ShoppingList({ data, setData }) {
               <button type="button" className={`toggle-item ${form.priority === 'essential' ? 'active' : ''}`} onClick={() => setForm({...form, priority: 'essential'})}>Essential</button>
               <button type="button" className={`toggle-item ${form.priority === 'non-essential' ? 'active' : ''}`} onClick={() => setForm({...form, priority: 'non-essential'})}>Nice to Have</button>
             </div>
+          </div>
+          <div className="form-group">
+            <label className="label">Link / URL</label>
+            <div style={{ position: 'relative' }}>
+              <input value={form.url} onChange={e => setForm({...form, url: e.target.value})} placeholder="https://..." type="url" style={{ paddingLeft: 38 }} />
+              <Icons.link style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: 'var(--text-muted)' }} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="label">Image</label>
+            {form.image ? (
+              <div style={{ position: 'relative', marginBottom: 8 }}>
+                <img src={form.image} style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--border)' }} />
+                <button type="button" className="btn-icon" style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', width: 28, height: 28 }} onClick={() => setForm({...form, image: ''})}>
+                  <Icons.x style={{ width: 14, height: 14 }} />
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px 12px', border: '1px dashed var(--border-light)', borderRadius: 10, cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <Icons.image style={{ width: 16, height: 16 }} /> Upload Photo
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = ev => setForm({...form, image: ev.target.result});
+                    reader.readAsDataURL(file);
+                  }} />
+                </label>
+              </div>
+            )}
           </div>
           <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 8 }}>{editId ? 'Save Changes' : 'Add Item'}</button>
         </form>
