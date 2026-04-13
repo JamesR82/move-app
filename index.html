@@ -1,0 +1,1131 @@
+const CACHE = 'move-v1';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap',
+];
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(r => r || fetch(e.request))
+  );
+});
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Move">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Move</title>
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #0a0a0a;
+    --bg-card: #141414;
+    --bg-card-hover: #1a1a1a;
+    --bg-input: #1a1a1a;
+    --border: #222;
+    --border-light: #2a2a2a;
+    --text: #f0f0f0;
+    --text-secondary: #888;
+    --text-muted: #555;
+    --accent: #e0e0e0;
+    --green: #4ade80;
+    --green-dim: #16a34a;
+    --red: #f87171;
+    --red-dim: #dc2626;
+    --amber: #fbbf24;
+    --blue: #60a5fa;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #root {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+  .fade-in { animation: fadeIn 0.3s ease-out; }
+  .slide-up { animation: slideUp 0.3s ease-out; }
+  .scale-in { animation: scaleIn 0.2s ease-out; }
+
+  /* Inputs */
+  input, select, textarea {
+    font-family: inherit;
+    font-size: 16px; /* prevents iOS zoom */
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 10px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #444;
+  }
+  input::placeholder { color: var(--text-muted); }
+  select { appearance: none; cursor: pointer; }
+
+  /* Buttons */
+  .btn {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 12px 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+  .btn-danger {
+    color: var(--red);
+    border-color: transparent;
+    background: transparent;
+    padding: 8px;
+  }
+  .btn-sm { padding: 8px 14px; font-size: 11px; }
+  .btn-full { width: 100%; }
+  .btn-icon {
+    width: 36px; height: 36px; padding: 0;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-input);
+  }
+
+  /* Progress bar */
+  .progress-track {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease-out;
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-content {
+    background: var(--bg-card);
+    border-radius: 20px 20px 0 0;
+    padding: 28px 24px;
+    padding-bottom: calc(24px + var(--safe-bottom));
+    width: 100%;
+    max-width: 500px;
+    max-height: 85dvh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease-out;
+  }
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: var(--border-light);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+
+  /* Tab bar */
+  .tab-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(14,14,14,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: var(--safe-bottom);
+    z-index: 50;
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 0 8px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.2s;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .tab-item.active { color: var(--text); }
+  .tab-item svg { width: 22px; height: 22px; stroke-width: 1.5; }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    transition: background 0.2s;
+  }
+
+  /* Chip / tag */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+  }
+  .chip.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  /* Toggle */
+  .toggle-group {
+    display: flex;
+    background: var(--bg-input);
+    border-radius: 10px;
+    padding: 3px;
+    border: 1px solid var(--border);
+  }
+  .toggle-item {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .toggle-item.active {
+    background: var(--bg-card-hover);
+    color: var(--text);
+  }
+
+  /* Swipe to delete */
+  .swipe-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+  }
+  .swipe-delete {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 80px;
+    background: var(--red-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Checkbox */
+  .checkbox {
+    width: 22px; height: 22px;
+    border: 1.5px solid var(--border-light);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    background: transparent;
+  }
+  .checkbox.checked {
+    background: var(--green-dim);
+    border-color: var(--green-dim);
+  }
+  .checkbox svg { width: 14px; height: 14px; }
+
+  /* Label */
+  .label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  /* Main content area */
+  .page-content {
+    flex: 1;
+    padding: 0 20px;
+    padding-top: calc(var(--safe-top) + 16px);
+    padding-bottom: calc(80px + var(--safe-bottom));
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .page-title {
+    font-size: 32px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin: 24px 0 12px;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state p { font-size: 14px; margin-bottom: 4px; }
+  .empty-state span { font-size: 12px; }
+
+  /* Stat card */
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .stat-card .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .stat-card .stat-value {
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+  }
+
+  /* Form group */
+  .form-group { margin-bottom: 16px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+/* ─── Icons (inline SVGs) ─── */
+const Icons = {
+  home: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  list: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+  receipt: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>,
+  wallet: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="5" width="22" height="16" rx="2"/><path d="M1 10h22"/><circle cx="17" cy="15" r="1"/></svg>,
+  plus: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  check: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  trash: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>,
+  x: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  trending: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+  pound: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 20H7c0-4 2-6 2-10a4 4 0 018 0"/><line x1="6" y1="14" x2="14" y2="14"/></svg>,
+  edit: (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+};
+
+/* ─── Data helpers ─── */
+const STORAGE_KEY = 'move_app_data';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return {
+    shoppingItems: [],
+    expenses: [],
+    budgets: [],
+  };
+}
+
+function saveData(data) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function fmt(n) { return '£' + (n || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+/* ─── Modal component ─── */
+function Modal({ open, onClose, title, children }) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-handle" />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 400 }}>{title}</h2>
+          <button className="btn-icon" onClick={onClose}>
+            <Icons.x style={{ width: 18, height: 18 }} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ─── DASHBOARD ─── */
+function Dashboard({ data }) {
+  const { expenses, budgets, shoppingItems } = data;
+
+  const totalBudget = budgets.reduce((s, b) => s + (b.amount || 0), 0);
+  const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const totalShopping = shoppingItems.reduce((s, i) => s + (i.price || 0), 0);
+  const totalSpent = totalExpenses + shoppingItems.filter(i => i.bought).reduce((s, i) => s + (i.price || 0), 0);
+  const totalDue = totalExpenses + totalShopping - totalSpent + expenses.filter(e => !e.paid).reduce((s, e) => s + (e.amount || 0), 0);
+
+  const shoppingBought = shoppingItems.filter(i => i.bought).reduce((s, i) => s + (i.price || 0), 0);
+  const shoppingRemaining = totalShopping - shoppingBought;
+  const expensesPaid = expenses.filter(e => e.paid).reduce((s, e) => s + (e.amount || 0), 0);
+  const expensesUnpaid = totalExpenses - expensesPaid;
+
+  const overallSpent = expensesPaid + shoppingBought;
+  const overallRemaining = expensesUnpaid + shoppingRemaining;
+  const overallTotal = overallSpent + overallRemaining;
+  const pctSpent = overallTotal > 0 ? (overallSpent / overallTotal) * 100 : 0;
+
+  const essentialItems = shoppingItems.filter(i => i.priority === 'essential');
+  const essentialBought = essentialItems.filter(i => i.bought).length;
+  const totalItems = shoppingItems.length;
+  const boughtItems = shoppingItems.filter(i => i.bought).length;
+
+  return (
+    <div className="page-content fade-in">
+      <h1 className="page-title">Move</h1>
+      <p className="page-subtitle">Your move at a glance</p>
+
+      {/* Main financial overview */}
+      <div className="card" style={{ marginBottom: 12, padding: 22 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 6 }}>Total Spent</div>
+            <div style={{ fontSize: 34, fontWeight: 300, letterSpacing: '-0.02em', color: 'var(--green)' }}>{fmt(overallSpent)}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 6 }}>Still Due</div>
+            <div style={{ fontSize: 34, fontWeight: 300, letterSpacing: '-0.02em', color: overallRemaining > 0 ? 'var(--amber)' : 'var(--green)' }}>{fmt(overallRemaining)}</div>
+          </div>
+        </div>
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${Math.min(pctSpent, 100)}%`, background: 'var(--green)' }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{pctSpent.toFixed(0)}% complete</span>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Total: {fmt(overallTotal)}</span>
+        </div>
+      </div>
+
+      {/* Stat cards */}
+      <div className="stat-row">
+        <div className="stat-card">
+          <div className="stat-label">Expenses Paid</div>
+          <div className="stat-value" style={{ color: 'var(--green)' }}>{fmt(expensesPaid)}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Expenses Due</div>
+          <div className="stat-value" style={{ color: expensesUnpaid > 0 ? 'var(--amber)' : 'var(--text-muted)' }}>{fmt(expensesUnpaid)}</div>
+        </div>
+      </div>
+      <div className="stat-row">
+        <div className="stat-card">
+          <div className="stat-label">Shopping Done</div>
+          <div className="stat-value" style={{ color: 'var(--green)' }}>{fmt(shoppingBought)}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Shopping Left</div>
+          <div className="stat-value" style={{ color: shoppingRemaining > 0 ? 'var(--amber)' : 'var(--text-muted)' }}>{fmt(shoppingRemaining)}</div>
+        </div>
+      </div>
+
+      {/* Progress section */}
+      <div className="section-label">Progress</div>
+      <div className="card" style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontSize: 14 }}>Shopping List</span>
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{boughtItems}/{totalItems} items</span>
+        </div>
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${totalItems > 0 ? (boughtItems/totalItems)*100 : 0}%`, background: 'var(--blue)' }} />
+        </div>
+      </div>
+      <div className="card" style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontSize: 14 }}>Essentials</span>
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{essentialBought}/{essentialItems.length} items</span>
+        </div>
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${essentialItems.length > 0 ? (essentialBought/essentialItems.length)*100 : 0}%`, background: 'var(--green)' }} />
+        </div>
+      </div>
+
+      {/* Budget overview */}
+      {budgets.length > 0 && (
+        <>
+          <div className="section-label">Budgets</div>
+          {budgets.map(b => {
+            const spent = getSpentInCategory(b.category, data);
+            const pct = b.amount > 0 ? Math.min((spent / b.amount) * 100, 100) : 0;
+            const over = spent > b.amount;
+            return (
+              <div key={b.id} className="card" style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <span style={{ fontSize: 14 }}>{b.category}</span>
+                  <span style={{ fontSize: 13, color: over ? 'var(--red)' : 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmt(spent)} / {fmt(b.amount)}
+                  </span>
+                </div>
+                <div className="progress-track">
+                  <div className="progress-fill" style={{ width: `${pct}%`, background: over ? 'var(--red)' : 'var(--green)' }} />
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ─── Helper: get spending in a category ─── */
+function getSpentInCategory(category, data) {
+  const cat = category.toLowerCase();
+  const shoppingSpent = data.shoppingItems
+    .filter(i => i.bought && i.category.toLowerCase() === cat)
+    .reduce((s, i) => s + (i.price || 0), 0);
+  const expenseSpent = data.expenses
+    .filter(e => e.paid && e.category.toLowerCase() === cat)
+    .reduce((s, e) => s + (e.amount || 0), 0);
+  return shoppingSpent + expenseSpent;
+}
+
+/* ─── SHOPPING LIST ─── */
+const SHOP_CATEGORIES = ['Living Room', 'Bedroom', 'Kitchen', 'General'];
+
+function ShoppingList({ data, setData }) {
+  const [modal, setModal] = useState(false);
+  const [filter, setFilter] = useState('all');
+  const [priority, setPriority] = useState('all');
+  const [form, setForm] = useState({ name: '', price: '', category: 'General', priority: 'essential' });
+  const [editId, setEditId] = useState(null);
+
+  const items = data.shoppingItems
+    .filter(i => filter === 'all' || i.category === filter)
+    .filter(i => priority === 'all' || i.priority === priority)
+    .sort((a, b) => {
+      if (a.bought !== b.bought) return a.bought ? 1 : -1;
+      if (a.priority !== b.priority) return a.priority === 'essential' ? -1 : 1;
+      return 0;
+    });
+
+  function handleSave(e) {
+    e.preventDefault();
+    const item = {
+      id: editId || genId(),
+      name: form.name,
+      price: parseFloat(form.price) || 0,
+      category: form.category,
+      priority: form.priority,
+      bought: editId ? (data.shoppingItems.find(i => i.id === editId)?.bought || false) : false,
+    };
+    let newItems;
+    if (editId) {
+      newItems = data.shoppingItems.map(i => i.id === editId ? item : i);
+    } else {
+      newItems = [...data.shoppingItems, item];
+    }
+    setData({ ...data, shoppingItems: newItems });
+    setForm({ name: '', price: '', category: 'General', priority: 'essential' });
+    setEditId(null);
+    setModal(false);
+  }
+
+  function toggleBought(id) {
+    const newItems = data.shoppingItems.map(i =>
+      i.id === id ? { ...i, bought: !i.bought } : i
+    );
+    setData({ ...data, shoppingItems: newItems });
+  }
+
+  function handleEdit(item) {
+    setForm({ name: item.name, price: item.price.toString(), category: item.category, priority: item.priority });
+    setEditId(item.id);
+    setModal(true);
+  }
+
+  function handleDelete(id) {
+    setData({ ...data, shoppingItems: data.shoppingItems.filter(i => i.id !== id) });
+  }
+
+  const totalCost = items.reduce((s, i) => s + (i.price || 0), 0);
+  const boughtCost = items.filter(i => i.bought).reduce((s, i) => s + (i.price || 0), 0);
+
+  return (
+    <div className="page-content fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+        <div>
+          <h1 className="page-title">Shopping</h1>
+          <p className="page-subtitle">{fmt(boughtCost)} of {fmt(totalCost)} bought</p>
+        </div>
+        <button className="btn btn-sm" onClick={() => { setEditId(null); setForm({ name: '', price: '', category: 'General', priority: 'essential' }); setModal(true); }}>
+          <Icons.plus style={{ width: 14, height: 14 }} /> Add
+        </button>
+      </div>
+
+      {/* Priority filter */}
+      <div className="toggle-group" style={{ marginBottom: 16 }}>
+        {['all', 'essential', 'non-essential'].map(p => (
+          <button key={p} className={`toggle-item ${priority === p ? 'active' : ''}`} onClick={() => setPriority(p)}>
+            {p === 'non-essential' ? 'Nice to Have' : p === 'all' ? 'All' : 'Essential'}
+          </button>
+        ))}
+      </div>
+
+      {/* Category chips */}
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 16 }}>
+        <button className={`chip ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All</button>
+        {SHOP_CATEGORIES.map(c => (
+          <button key={c} className={`chip ${filter === c ? 'active' : ''}`} onClick={() => setFilter(c)}>{c}</button>
+        ))}
+      </div>
+
+      {/* Items */}
+      {items.length === 0 ? (
+        <div className="empty-state">
+          <p>No items yet</p>
+          <span>Tap + to start your shopping list</span>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {items.map(item => (
+            <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16 }}>
+              <div className={`checkbox ${item.bought ? 'checked' : ''}`} onClick={() => toggleBought(item.id)}>
+                {item.bought && <Icons.check style={{ color: 'white' }} />}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }} onClick={() => handleEdit(item)}>
+                <div style={{ fontSize: 14, fontWeight: 400, opacity: item.bought ? 0.4 : 1, textDecoration: item.bought ? 'line-through' : 'none' }}>
+                  {item.name}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 8 }}>
+                  <span>{item.category}</span>
+                  <span>·</span>
+                  <span style={{ color: item.priority === 'essential' ? 'var(--green)' : 'var(--text-muted)' }}>
+                    {item.priority === 'essential' ? 'Essential' : 'Nice to have'}
+                  </span>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: 14, fontVariantNumeric: 'tabular-nums', opacity: item.bought ? 0.4 : 1 }}>{fmt(item.price)}</div>
+              </div>
+              <button className="btn-danger" onClick={() => handleDelete(item.id)} style={{ padding: 4 }}>
+                <Icons.trash style={{ width: 16, height: 16 }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add/Edit Modal */}
+      <Modal open={modal} onClose={() => { setModal(false); setEditId(null); }} title={editId ? 'Edit Item' : 'Add Item'}>
+        <form onSubmit={handleSave}>
+          <div className="form-group">
+            <label className="label">Item Name</label>
+            <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Sofa, Kettle, Bedding..." required />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="label">Price (£)</label>
+              <input type="number" step="0.01" value={form.price} onChange={e => setForm({...form, price: e.target.value})} placeholder="0.00" required />
+            </div>
+            <div className="form-group">
+              <label className="label">Category</label>
+              <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                {SHOP_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="label">Priority</label>
+            <div className="toggle-group">
+              <button type="button" className={`toggle-item ${form.priority === 'essential' ? 'active' : ''}`} onClick={() => setForm({...form, priority: 'essential'})}>Essential</button>
+              <button type="button" className={`toggle-item ${form.priority === 'non-essential' ? 'active' : ''}`} onClick={() => setForm({...form, priority: 'non-essential'})}>Nice to Have</button>
+            </div>
+          </div>
+          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 8 }}>{editId ? 'Save Changes' : 'Add Item'}</button>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+/* ─── EXPENSES ─── */
+const EXPENSE_CATEGORIES = ['Moving Costs', 'Deposit', 'Utilities', 'Insurance', 'Fees', 'Living Room', 'Bedroom', 'Kitchen', 'General'];
+
+function Expenses({ data, setData }) {
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({ name: '', amount: '', category: 'Moving Costs', paid: false });
+  const [editId, setEditId] = useState(null);
+
+  function handleSave(e) {
+    e.preventDefault();
+    const expense = {
+      id: editId || genId(),
+      name: form.name,
+      amount: parseFloat(form.amount) || 0,
+      category: form.category,
+      paid: form.paid,
+    };
+    let newExpenses;
+    if (editId) {
+      newExpenses = data.expenses.map(ex => ex.id === editId ? expense : ex);
+    } else {
+      newExpenses = [...data.expenses, expense];
+    }
+    setData({ ...data, expenses: newExpenses });
+    setForm({ name: '', amount: '', category: 'Moving Costs', paid: false });
+    setEditId(null);
+    setModal(false);
+  }
+
+  function togglePaid(id) {
+    const newExpenses = data.expenses.map(e =>
+      e.id === id ? { ...e, paid: !e.paid } : e
+    );
+    setData({ ...data, expenses: newExpenses });
+  }
+
+  function handleEdit(expense) {
+    setForm({ name: expense.name, amount: expense.amount.toString(), category: expense.category, paid: expense.paid });
+    setEditId(expense.id);
+    setModal(true);
+  }
+
+  function handleDelete(id) {
+    setData({ ...data, expenses: data.expenses.filter(e => e.id !== id) });
+  }
+
+  const totalExpenses = data.expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const paidExpenses = data.expenses.filter(e => e.paid).reduce((s, e) => s + (e.amount || 0), 0);
+  const unpaidExpenses = totalExpenses - paidExpenses;
+
+  // Group by category
+  const grouped = {};
+  data.expenses.forEach(e => {
+    if (!grouped[e.category]) grouped[e.category] = [];
+    grouped[e.category].push(e);
+  });
+
+  return (
+    <div className="page-content fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+        <div>
+          <h1 className="page-title">Expenses</h1>
+          <p className="page-subtitle">{fmt(paidExpenses)} paid · {fmt(unpaidExpenses)} due</p>
+        </div>
+        <button className="btn btn-sm" onClick={() => { setEditId(null); setForm({ name: '', amount: '', category: 'Moving Costs', paid: false }); setModal(true); }}>
+          <Icons.plus style={{ width: 14, height: 14 }} /> Add
+        </button>
+      </div>
+
+      {/* Summary bar */}
+      <div className="card" style={{ marginBottom: 24, padding: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ fontSize: 13 }}>Total: {fmt(totalExpenses)}</span>
+          <span style={{ fontSize: 13, color: 'var(--green)' }}>{totalExpenses > 0 ? ((paidExpenses / totalExpenses) * 100).toFixed(0) : 0}% paid</span>
+        </div>
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${totalExpenses > 0 ? (paidExpenses / totalExpenses) * 100 : 0}%`, background: 'var(--green)' }} />
+        </div>
+      </div>
+
+      {Object.keys(grouped).length === 0 ? (
+        <div className="empty-state">
+          <p>No expenses yet</p>
+          <span>Add deposit, movers, utilities...</span>
+        </div>
+      ) : (
+        Object.entries(grouped).map(([category, items]) => (
+          <div key={category}>
+            <div className="section-label">{category}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {items.map(expense => (
+                <div key={expense.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16 }}>
+                  <div className={`checkbox ${expense.paid ? 'checked' : ''}`} onClick={() => togglePaid(expense.id)}>
+                    {expense.paid && <Icons.check style={{ color: 'white' }} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }} onClick={() => handleEdit(expense)}>
+                    <div style={{ fontSize: 14, fontWeight: 400, opacity: expense.paid ? 0.5 : 1 }}>{expense.name}</div>
+                    <div style={{ fontSize: 12, color: expense.paid ? 'var(--green)' : 'var(--amber)', marginTop: 2 }}>
+                      {expense.paid ? 'Paid' : 'Due'}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 14, fontVariantNumeric: 'tabular-nums', opacity: expense.paid ? 0.5 : 1 }}>{fmt(expense.amount)}</div>
+                  <button className="btn-danger" onClick={() => handleDelete(expense.id)} style={{ padding: 4 }}>
+                    <Icons.trash style={{ width: 16, height: 16 }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
+      )}
+
+      <Modal open={modal} onClose={() => { setModal(false); setEditId(null); }} title={editId ? 'Edit Expense' : 'Add Expense'}>
+        <form onSubmit={handleSave}>
+          <div className="form-group">
+            <label className="label">Description</label>
+            <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Deposit, Van hire, Gas bill..." required />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="label">Amount (£)</label>
+              <input type="number" step="0.01" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} placeholder="0.00" required />
+            </div>
+            <div className="form-group">
+              <label className="label">Category</label>
+              <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="label">Status</label>
+            <div className="toggle-group">
+              <button type="button" className={`toggle-item ${!form.paid ? 'active' : ''}`} onClick={() => setForm({...form, paid: false})}>Due</button>
+              <button type="button" className={`toggle-item ${form.paid ? 'active' : ''}`} onClick={() => setForm({...form, paid: true})}>Paid</button>
+            </div>
+          </div>
+          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 8 }}>{editId ? 'Save Changes' : 'Add Expense'}</button>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+/* ─── BUDGETS ─── */
+const BUDGET_CATEGORIES = ['Living Room', 'Bedroom', 'Kitchen', 'General', 'Moving Costs', 'Deposit', 'Utilities', 'Insurance', 'Fees'];
+
+function Budgets({ data, setData }) {
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({ category: 'Living Room', amount: '' });
+  const [editId, setEditId] = useState(null);
+
+  const totalBudget = data.budgets.reduce((s, b) => s + (b.amount || 0), 0);
+  const totalSpent = data.budgets.reduce((s, b) => s + getSpentInCategory(b.category, data), 0);
+
+  function handleSave(e) {
+    e.preventDefault();
+    const budget = {
+      id: editId || genId(),
+      category: form.category,
+      amount: parseFloat(form.amount) || 0,
+    };
+    let newBudgets;
+    if (editId) {
+      newBudgets = data.budgets.map(b => b.id === editId ? budget : b);
+    } else {
+      newBudgets = [...data.budgets, budget];
+    }
+    setData({ ...data, budgets: newBudgets });
+    setForm({ category: 'Living Room', amount: '' });
+    setEditId(null);
+    setModal(false);
+  }
+
+  function handleEdit(budget) {
+    setForm({ category: budget.category, amount: budget.amount.toString() });
+    setEditId(budget.id);
+    setModal(true);
+  }
+
+  function handleDelete(id) {
+    setData({ ...data, budgets: data.budgets.filter(b => b.id !== id) });
+  }
+
+  const usedCategories = data.budgets.map(b => b.category);
+  const availableCategories = editId
+    ? BUDGET_CATEGORIES
+    : BUDGET_CATEGORIES.filter(c => !usedCategories.includes(c));
+
+  return (
+    <div className="page-content fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+        <div>
+          <h1 className="page-title">Budget</h1>
+          <p className="page-subtitle">{fmt(totalSpent)} of {fmt(totalBudget)} spent</p>
+        </div>
+        {availableCategories.length > 0 && (
+          <button className="btn btn-sm" onClick={() => { setEditId(null); setForm({ category: availableCategories[0] || 'General', amount: '' }); setModal(true); }}>
+            <Icons.plus style={{ width: 14, height: 14 }} /> Add
+          </button>
+        )}
+      </div>
+
+      {/* Overall progress */}
+      <div className="card" style={{ marginBottom: 24, padding: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ fontSize: 13 }}>Overall</span>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(0) : 0}%</span>
+        </div>
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0}%`, background: totalSpent > totalBudget ? 'var(--red)' : 'var(--green)' }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{fmt(totalSpent)} spent</span>
+          <span style={{ fontSize: 11, color: totalSpent > totalBudget ? 'var(--red)' : 'var(--text-muted)' }}>
+            {totalSpent > totalBudget ? `${fmt(totalSpent - totalBudget)} over` : `${fmt(totalBudget - totalSpent)} remaining`}
+          </span>
+        </div>
+      </div>
+
+      {data.budgets.length === 0 ? (
+        <div className="empty-state">
+          <p>No budgets set</p>
+          <span>Set budgets for each room or category</span>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {data.budgets.map(budget => {
+            const spent = getSpentInCategory(budget.category, data);
+            const pct = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0;
+            const over = spent > budget.amount;
+            return (
+              <div key={budget.id} className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 400 }}>{budget.category}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>Budget: {fmt(budget.amount)}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 15, fontVariantNumeric: 'tabular-nums', color: over ? 'var(--red)' : 'var(--text)' }}>{fmt(spent)}</span>
+                    <button className="btn-danger" onClick={() => handleDelete(budget.id)} style={{ padding: 4 }}>
+                      <Icons.trash style={{ width: 15, height: 15 }} />
+                    </button>
+                  </div>
+                </div>
+                <div className="progress-track" style={{ marginBottom: 6 }}>
+                  <div className="progress-fill" style={{ width: `${pct}%`, background: over ? 'var(--red)' : 'var(--green)' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{pct.toFixed(0)}% used</span>
+                  <span style={{ fontSize: 11, color: over ? 'var(--red)' : 'var(--text-muted)' }}>
+                    {over ? `${fmt(spent - budget.amount)} over` : `${fmt(budget.amount - spent)} left`}
+                  </span>
+                </div>
+                <button className="btn btn-sm" style={{ marginTop: 12, width: '100%', fontSize: 11, padding: '8px 12px', border: '1px solid var(--border)' }} onClick={() => handleEdit(budget)}>
+                  <Icons.edit style={{ width: 12, height: 12 }} /> Edit Budget
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Modal open={modal} onClose={() => { setModal(false); setEditId(null); }} title={editId ? 'Edit Budget' : 'Set Budget'}>
+        <form onSubmit={handleSave}>
+          <div className="form-group">
+            <label className="label">Category</label>
+            <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} disabled={!!editId}>
+              {(editId ? BUDGET_CATEGORIES : availableCategories).map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="label">Budget Amount (£)</label>
+            <input type="number" step="0.01" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} placeholder="0.00" required />
+          </div>
+          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 8 }}>{editId ? 'Save Changes' : 'Set Budget'}</button>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+/* ─── APP ─── */
+function App() {
+  const [tab, setTab] = useState('dashboard');
+  const [data, setDataState] = useState(loadData);
+
+  function setData(newData) {
+    setDataState(newData);
+    saveData(newData);
+  }
+
+  const tabs = [
+    { id: 'dashboard', label: 'Home', icon: Icons.home },
+    { id: 'shopping', label: 'Shop', icon: Icons.list },
+    { id: 'expenses', label: 'Costs', icon: Icons.receipt },
+    { id: 'budget', label: 'Budget', icon: Icons.wallet },
+  ];
+
+  return (
+    <>
+      {tab === 'dashboard' && <Dashboard data={data} />}
+      {tab === 'shopping' && <ShoppingList data={data} setData={setData} />}
+      {tab === 'expenses' && <Expenses data={data} setData={setData} />}
+      {tab === 'budget' && <Budgets data={data} setData={setData} />}
+
+      <nav className="tab-bar">
+        {tabs.map(t => (
+          <button key={t.id} className={`tab-item ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>
+            <t.icon />
+            {t.label}
+          </button>
+        ))}
+      </nav>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
+
+{
+  "name": "Move",
+  "short_name": "Move",
+  "description": "Minimalist house moving planner",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+
+# Move
+
+A minimalist house moving planner, optimised for iPhone.
+
+## Features
+
+- **Dashboard** — Overview of money spent and money still due
+- **Shopping List** — Essential and non-essential items, categorised by room (Living Room, Bedroom, Kitchen, General)
+- **Expenses** — Track moving costs, utilities, deposit, insurance, and fees
+- **Budget** — Set and monitor budgets per room or category
+
+## Usage
+
+Open `index.html` in any browser, or deploy via GitHub Pages. On iPhone, tap Share > Add to Home Screen for a full-screen app experience.
+
+All data is stored locally on your device.
+
+## Tech
+
+Single-file React PWA. No build step required.
